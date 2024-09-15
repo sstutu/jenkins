@@ -1,4 +1,13 @@
+# 两个service 的关系图 来自gpt claude
+# graph TD
+#    A[主机] -->|8080:8080| B[jenkins-blueocean容器]
+#    A -->|50000:50000| B
+#    A -->|127.0.0.1:2376:2375| C[socat容器]
+#    B -->|DOCKER_HOST=tcp://docker:2376| C
+#    C -->|/var/run/docker.sock| D[Docker守护进程]
+#    A -->|/var/run/docker.sock| D
 services:
+  # 参考 https://www.jenkins.io/doc/book/installing/docker/
   jenkins:
     container_name: jenkins-blueocean
     image: jenkins-blueocean:2.462.2-1
@@ -18,6 +27,17 @@ services:
       - "50000:50000"
     networks:
       - jenkins
+  # 参考 https://github.com/devopsjourney1/jenkins-101.git
+  docker-proxy:
+    image: alpine/socat
+    container_name: docker-proxy
+    restart: always
+    ports:
+      - 127.0.0.1:2376:2375
+    networks:
+      - jenkins
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock    
 
 networks:
   jenkins:
